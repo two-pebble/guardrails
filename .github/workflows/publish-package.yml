@@ -33,21 +33,14 @@ jobs:
 
       - run: pnpm --filter @guardrails/guardrails build
 
-      - name: Set GitHub Packages scope
+      - name: Prepare GitHub Packages name and version
         working-directory: packages/guardrails
-        run: |
-          node -e "
-          const fs = require('node:fs');
-          const owner = process.env.OWNER_LOWER;
-          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          pkg.name = '@' + owner + '/guardrails';
-          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
+        run: node ./scripts/prepare-publish-package.mjs
         env:
           OWNER_LOWER: ${{ steps.owner.outputs.lower }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - run: pnpm publish --no-git-checks
         working-directory: packages/guardrails
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
