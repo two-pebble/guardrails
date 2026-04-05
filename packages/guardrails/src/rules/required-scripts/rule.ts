@@ -1,9 +1,9 @@
 import { Guardrail } from "../../constructs/guardrail";
+import type { PackageJsonShape } from "./types";
 
-interface PackageJsonShape {
-  scripts?: Record<string, unknown>;
-}
-
+/**
+ * Requires package.json to define a configured list of scripts.
+ */
 export class RequiredScriptsRule extends Guardrail {
   public readonly name = "required-scripts";
 
@@ -23,7 +23,7 @@ export class RequiredScriptsRule extends Guardrail {
     const packageJson = JSON.parse(this.readPackageFile("package.json")) as PackageJsonShape;
     const scripts = packageJson.scripts ?? {};
     const requiredScripts = this.getRequiredScripts();
-    const missingScripts = requiredScripts.filter((scriptName) => !hasScript(scripts, scriptName));
+    const missingScripts = requiredScripts.filter((scriptName) => !this.hasScript(scripts, scriptName));
 
     if (missingScripts.length > 0) {
       reporter.fail({
@@ -37,9 +37,9 @@ export class RequiredScriptsRule extends Guardrail {
   private getRequiredScripts() {
     return this.options.requiredScripts as string[];
   }
-}
 
-function hasScript(scripts: Record<string, unknown>, scriptName: string) {
-  const value = scripts[scriptName];
-  return typeof value === "string" && value.trim().length > 0;
+  private hasScript(scripts: Record<string, unknown>, scriptName: string) {
+    const value = scripts[scriptName];
+    return typeof value === "string" && value.trim().length > 0;
+  }
 }

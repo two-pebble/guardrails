@@ -4,7 +4,11 @@ import { UnknownGroupError, UnknownRuleError } from "./errors";
 import { filterSuppressedDiagnostics } from "./inline-suppression";
 import type { CheckResult, ExcludeList, GuardrailConfig, GuardrailContext, RuleConfig } from "./types";
 
+/**
+ * Expands a guardrail config into concrete rule executions for one package.
+ */
 export class Controller {
+  // Runs every configured rule against the target package and returns aggregated diagnostics.
   public async run(packageDir: string, config: GuardrailConfig) {
     validateGuardrailConfig(config);
 

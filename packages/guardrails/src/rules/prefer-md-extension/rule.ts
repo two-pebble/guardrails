@@ -1,5 +1,8 @@
 import { Guardrail } from "../../constructs/guardrail";
 
+/**
+ * Requires Markdown sidecars to use the .md extension.
+ */
 export class PreferMdExtensionRule extends Guardrail {
   public readonly name = "prefer-md-extension";
 

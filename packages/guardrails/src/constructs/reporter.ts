@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import type { Diagnostic, DiagnosticError } from "../types";
 
+/**
+ * Collects diagnostics for a single rule/file execution pair.
+ */
 export class Reporter {
   public readonly rule: string;
   public readonly file?: string;
@@ -12,6 +15,7 @@ export class Reporter {
     this.file = file;
   }
 
+  // Records a diagnostic failure for the current file.
   public fail(error: DiagnosticError, line?: number) {
     this.diagnostics.push({
       file: this.file,
@@ -21,6 +25,7 @@ export class Reporter {
     });
   }
 
+  // Returns whether the reporter has collected any diagnostics.
   public get passed() {
     return this.diagnostics.length === 0;
   }

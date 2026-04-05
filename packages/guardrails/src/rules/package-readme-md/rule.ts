@@ -1,5 +1,8 @@
 import { Guardrail } from "../../constructs/guardrail";
 
+/**
+ * Requires a package-root README.md with the expected Guardrails structure.
+ */
 export class PackageReadmeMdRule extends Guardrail {
   public readonly name = "package-readme-md";
 

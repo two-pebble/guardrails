@@ -2,15 +2,27 @@ import { existsSync, readFileSync } from "node:fs";
 import { posix, relative, resolve } from "node:path";
 import { glob } from "tinyglobby";
 import ts from "typescript";
+import { InvalidGuardrailUsageError } from "../errors";
 import type { DiagnosticError, GuardrailContext } from "../types";
 import type {
   DirectoryCallback,
+  DirectoryPathsOrCallback,
+  FailOnRegexPathsOrPattern,
+  FailOnRegexPatternOrError,
   FileCallback,
   FileContentCallback,
+  FileContentPathsOrCallback,
+  FilePathsOrCallback,
+  GuardrailPathSegments,
+  GuardrailPaths,
   TypeScriptFileCallback,
+  TypeScriptPathsOrCallback,
 } from "./guardrail.contracts";
 import { Reporter } from "./reporter";
 
+/**
+ * Provides shared package-scoped file iteration helpers for individual guardrail rules.
+ */
 export abstract class Guardrail {
   private static readonly sourceTypeScriptPaths = ["src/**/*.ts", "src/**/*.tsx"] as const;
   private static readonly testTypeScriptPaths = ["src/**/*.test.ts", "src/**/*.test.tsx"] as const;
@@ -21,6 +33,7 @@ export abstract class Guardrail {
   private context!: GuardrailContext;
   private reporters: Reporter[] = [];
 
+  // Executes the rule with package-scoped context and returns collected reporters.
   public async execute(context: GuardrailContext) {
     this.context = context;
     this.reporters = [];
@@ -42,7 +55,7 @@ export abstract class Guardrail {
     return this.context.packageDir;
   }
 
-  protected resolvePackagePath(...segments: string[]) {
+  protected resolvePackagePath(...segments: GuardrailPathSegments) {
     return resolve(this.getPackageRoot(), ...segments);
   }
 
@@ -69,14 +82,10 @@ export abstract class Guardrail {
   }
 
   protected async failOnRegex(pattern: RegExp, error: DiagnosticError): Promise<void>;
+  protected async failOnRegex(paths: GuardrailPaths, pattern: RegExp, error: DiagnosticError): Promise<void>;
   protected async failOnRegex(
-    paths: string | readonly string[],
-    pattern: RegExp,
-    error: DiagnosticError,
-  ): Promise<void>;
-  protected async failOnRegex(
-    pathsOrPattern: string | readonly string[] | RegExp,
-    patternOrError: RegExp | DiagnosticError,
+    pathsOrPattern: FailOnRegexPathsOrPattern,
+    patternOrError: FailOnRegexPatternOrError,
     maybeError?: DiagnosticError,
   ) {
     const paths = pathsOrPattern instanceof RegExp ? undefined : pathsOrPattern;
@@ -84,7 +93,7 @@ export abstract class Guardrail {
     const error = pathsOrPattern instanceof RegExp ? (patternOrError as DiagnosticError) : maybeError;
 
     if (!error) {
-      throw new Error(`Guardrail ${this.name} must provide a diagnostic error for failOnRegex.`);
+      throw new InvalidGuardrailUsageError(`Guardrail ${this.name} must provide a diagnostic error for failOnRegex.`);
     }
 
     await this.forEachFileContent(paths ?? Guardrail.sourceTypeScriptPaths, (_file, content, reporter) => {
@@ -134,11 +143,8 @@ export abstract class Guardrail {
   }
 
   protected async forEachFile(callback: FileCallback): Promise<void>;
-  protected async forEachFile(paths: string | readonly string[], callback: FileCallback): Promise<void>;
-  protected async forEachFile(
-    pathsOrCallback: string | readonly string[] | FileCallback,
-    maybeCallback?: FileCallback,
-  ) {
+  protected async forEachFile(paths: GuardrailPaths, callback: FileCallback): Promise<void>;
+  protected async forEachFile(pathsOrCallback: FilePathsOrCallback, maybeCallback?: FileCallback) {
     const paths = this.getOperationPaths(
       Guardrail.sourceTypeScriptPaths,
       typeof pathsOrCallback === "function" ? undefined : pathsOrCallback,
@@ -146,7 +152,7 @@ export abstract class Guardrail {
     const callback = typeof pathsOrCallback === "function" ? pathsOrCallback : maybeCallback;
 
     if (!callback) {
-      throw new Error(`Guardrail ${this.name} must provide a file callback.`);
+      throw new InvalidGuardrailUsageError(`Guardrail ${this.name} must provide a file callback.`);
     }
 
     const files = await this.resolvePaths(paths);
@@ -157,11 +163,8 @@ export abstract class Guardrail {
   }
 
   protected async forEachMatchedFile(callback: FileCallback): Promise<void>;
-  protected async forEachMatchedFile(paths: string | readonly string[], callback: FileCallback): Promise<void>;
-  protected async forEachMatchedFile(
-    pathsOrCallback: string | readonly string[] | FileCallback,
-    maybeCallback?: FileCallback,
-  ) {
+  protected async forEachMatchedFile(paths: GuardrailPaths, callback: FileCallback): Promise<void>;
+  protected async forEachMatchedFile(pathsOrCallback: FilePathsOrCallback, maybeCallback?: FileCallback) {
     if (typeof pathsOrCallback === "function") {
       await this.forEachFile(pathsOrCallback);
       return;
@@ -171,11 +174,8 @@ export abstract class Guardrail {
   }
 
   protected async forEachFileContent(callback: FileContentCallback): Promise<void>;
-  protected async forEachFileContent(paths: string | readonly string[], callback: FileContentCallback): Promise<void>;
-  protected async forEachFileContent(
-    pathsOrCallback: string | readonly string[] | FileContentCallback,
-    maybeCallback?: FileContentCallback,
-  ) {
+  protected async forEachFileContent(paths: GuardrailPaths, callback: FileContentCallback): Promise<void>;
+  protected async forEachFileContent(pathsOrCallback: FileContentPathsOrCallback, maybeCallback?: FileContentCallback) {
     const paths = this.getOperationPaths(
       Guardrail.sourceTypeScriptPaths,
       typeof pathsOrCallback === "function" ? undefined : pathsOrCallback,
@@ -183,7 +183,7 @@ export abstract class Guardrail {
     const callback = typeof pathsOrCallback === "function" ? pathsOrCallback : maybeCallback;
 
     if (!callback) {
-      throw new Error(`Guardrail ${this.name} must provide a file-content callback.`);
+      throw new InvalidGuardrailUsageError(`Guardrail ${this.name} must provide a file-content callback.`);
     }
 
     await this.forEachFile(paths, async (file, reporter) => {
@@ -193,12 +193,9 @@ export abstract class Guardrail {
   }
 
   protected async forEachTypeScriptFile(callback: TypeScriptFileCallback): Promise<void>;
+  protected async forEachTypeScriptFile(paths: GuardrailPaths, callback: TypeScriptFileCallback): Promise<void>;
   protected async forEachTypeScriptFile(
-    paths: string | readonly string[],
-    callback: TypeScriptFileCallback,
-  ): Promise<void>;
-  protected async forEachTypeScriptFile(
-    pathsOrCallback: string | readonly string[] | TypeScriptFileCallback,
+    pathsOrCallback: TypeScriptPathsOrCallback,
     maybeCallback?: TypeScriptFileCallback,
   ) {
     const paths = this.getOperationPaths(
@@ -208,7 +205,7 @@ export abstract class Guardrail {
     const callback = typeof pathsOrCallback === "function" ? pathsOrCallback : maybeCallback;
 
     if (!callback) {
-      throw new Error(`Guardrail ${this.name} must provide a TypeScript callback.`);
+      throw new InvalidGuardrailUsageError(`Guardrail ${this.name} must provide a TypeScript callback.`);
     }
 
     const files = await this.resolvePaths(paths);
@@ -222,11 +219,8 @@ export abstract class Guardrail {
   }
 
   protected async forEachDirectory(callback: DirectoryCallback): Promise<void>;
-  protected async forEachDirectory(paths: string | readonly string[], callback: DirectoryCallback): Promise<void>;
-  protected async forEachDirectory(
-    pathsOrCallback: string | readonly string[] | DirectoryCallback,
-    maybeCallback?: DirectoryCallback,
-  ) {
+  protected async forEachDirectory(paths: GuardrailPaths, callback: DirectoryCallback): Promise<void>;
+  protected async forEachDirectory(pathsOrCallback: DirectoryPathsOrCallback, maybeCallback?: DirectoryCallback) {
     if (typeof pathsOrCallback === "function") {
       await this.forEachMatchedDirectory(pathsOrCallback);
       return;
@@ -236,12 +230,9 @@ export abstract class Guardrail {
   }
 
   protected async forEachMatchedDirectory(callback: DirectoryCallback): Promise<void>;
+  protected async forEachMatchedDirectory(paths: GuardrailPaths, callback: DirectoryCallback): Promise<void>;
   protected async forEachMatchedDirectory(
-    paths: string | readonly string[],
-    callback: DirectoryCallback,
-  ): Promise<void>;
-  protected async forEachMatchedDirectory(
-    pathsOrCallback: string | readonly string[] | DirectoryCallback,
+    pathsOrCallback: DirectoryPathsOrCallback,
     maybeCallback?: DirectoryCallback,
   ) {
     const paths = this.getOperationPaths(
@@ -251,7 +242,7 @@ export abstract class Guardrail {
     const callback = typeof pathsOrCallback === "function" ? pathsOrCallback : maybeCallback;
 
     if (!callback) {
-      throw new Error(`Guardrail ${this.name} must provide a directory callback.`);
+      throw new InvalidGuardrailUsageError(`Guardrail ${this.name} must provide a directory callback.`);
     }
 
     const directories = await this.resolveDirectories(paths);
@@ -266,7 +257,7 @@ export abstract class Guardrail {
     return glob(paths, {
       absolute: true,
       cwd: this.context.packageDir,
-      ignore: ["**/node_modules/**", ...this.context.exclude],
+      ignore: this.getIgnorePatterns(),
     });
   }
 
@@ -274,16 +265,32 @@ export abstract class Guardrail {
     return glob(Guardrail.toDirectoryPatterns(paths), {
       absolute: true,
       cwd: this.context.packageDir,
-      ignore: ["**/node_modules/**", ...this.context.exclude],
+      ignore: this.getIgnorePatterns(),
       onlyDirectories: true,
     });
+  }
+
+  private getIgnorePatterns() {
+    return ["**/node_modules/**", ...this.context.exclude, ...this.getDefaultIgnores()];
+  }
+
+  private getDefaultIgnores() {
+    if (this.context.paths && this.context.paths.length > 0) {
+      return [];
+    }
+
+    if (Guardrail.isTestFocusedRule(this.name)) {
+      return Guardrail.getPackageImplicitIgnores();
+    }
+
+    return [...Guardrail.getPackageImplicitIgnores(), ...Guardrail.getSourceRuleImplicitIgnores()];
   }
 
   private static toDirectoryPatterns(paths: readonly string[]) {
     return [...new Set(paths.map((path) => Guardrail.toDirectoryPattern(path)))];
   }
 
-  private getOperationPaths(defaultPaths: readonly string[], input?: string | readonly string[]) {
+  private getOperationPaths(defaultPaths: readonly string[], input?: GuardrailPaths) {
     if (this.context.paths && this.context.paths.length > 0) {
       return [...this.context.paths];
     }
@@ -295,8 +302,30 @@ export abstract class Guardrail {
     return [...defaultPaths];
   }
 
-  private static toPathList(paths: string | readonly string[]) {
+  private static toPathList(paths: GuardrailPaths) {
     return Array.isArray(paths) ? [...paths] : [paths];
+  }
+
+  private static getPackageImplicitIgnores() {
+    return ["**/fixtures/**", "**/__snapshots__/**", "**/snapshots/**", "**/*.snap"] as const;
+  }
+
+  private static getSourceRuleImplicitIgnores() {
+    return ["**/*.test.ts", "**/*.test.tsx"] as const;
+  }
+
+  private static isTestFocusedRule(ruleName: string) {
+    return new Set<string>([
+      "test-block-format",
+      "test-name-prefixes",
+      "max-test-assertions",
+      "max-test-it-block-lines",
+      "no-nested-describe-blocks",
+      "no-vi-mock",
+      "snapshot-tests-use-file-snapshots",
+      "test-files-use-vitest",
+      "pure-test-files",
+    ]).has(ruleName);
   }
 
   private static toDirectoryPattern(path: string) {

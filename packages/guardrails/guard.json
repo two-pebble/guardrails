@@ -1,9 +1,3 @@
 {
-  "additional": {
-    "@rule/package-readme-md": {},
-    "@rule/prefer-md-extension": {},
-    "@rule/required-scripts": {
-      "requiredScripts": ["build", "guard", "test", "typecheck"]
-    }
-  }
+  "inherit": "@group/guardrails-typescript"
 }

@@ -1,6 +1,9 @@
 import ts from "typescript";
 import { Guardrail } from "../../constructs/guardrail";
 
+/**
+ * Bans dynamic imports and inline import type queries in package source files.
+ */
 export class NoDynamicImportsRule extends Guardrail {
   public readonly name = "no-dynamic-imports";
   private static readonly paths = ["src/**/*.ts", "src/**/*.tsx"] as const;

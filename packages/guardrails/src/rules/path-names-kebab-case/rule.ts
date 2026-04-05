@@ -1,6 +1,9 @@
 import { basename } from "node:path";
 import { Guardrail } from "../../constructs/guardrail";
 
+/**
+ * Enforces lowercase kebab-case names for source folders and TypeScript files.
+ */
 export class PathNamesKebabCaseRule extends Guardrail {
   public readonly name = "path-names-kebab-case";
   private static readonly tsPaths = ["src/**/*.ts", "src/**/*.tsx"] as const;

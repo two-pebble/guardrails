@@ -1,0 +1,9 @@
+{
+  "name": "required-scripts-pass",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  }
+}

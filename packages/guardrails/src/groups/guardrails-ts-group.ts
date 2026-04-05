@@ -1,12 +1,17 @@
 import { Group } from "../group";
 
+/**
+ * Defines the default TypeScript guardrail set used by package repos.
+ */
 export class GuardrailsTsGroup extends Group {
   public readonly name = "guardrails-typescript";
 
+  // Returns the full TypeScript baseline for package-level guardrails.
   public rules() {
     return GuardrailsTsGroup.baseRules();
   }
 
+  // Returns the reusable TypeScript rule list for other groups to extend.
   public static baseRules() {
     return [
       { rule: "class-fields-at-top", config: {} },
@@ -55,6 +60,13 @@ export class GuardrailsTsGroup extends Group {
       { rule: "throw-package-errors", config: {} },
       { rule: "types-only-in-types-files", config: {} },
       { rule: "prefer-md-extension", config: {} },
+      {
+        rule: "code-structure",
+        config: {
+          files: ["src/rules/**/rule.ts", "src/rules/**/rule.test.ts", "src/rules/**/docs.md", "src/rules/**/fixtures"],
+          "no-direct-files": ["src/rules"],
+        },
+      },
     ];
   }
 }
