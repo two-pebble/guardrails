@@ -1,6 +1,7 @@
 import { validateGuardrailConfig } from "./config-validator";
 import { groups, rules } from "./consts";
 import { UnknownGroupError, UnknownRuleError } from "./errors";
+import { filterSuppressedDiagnostics } from "./inline-suppression";
 import type { CheckResult, ExcludeList, GuardrailConfig, GuardrailContext, RuleConfig } from "./types";
 
 export class Controller {
@@ -45,7 +46,10 @@ export class Controller {
       const ruleStart = performance.now();
       const reporters = await rule.execute(context);
       const durationMs = Math.round(performance.now() - ruleStart);
-      const diagnostics = reporters.flatMap((reporter) => reporter.diagnostics);
+      const diagnostics = filterSuppressedDiagnostics(
+        ruleName,
+        reporters.flatMap((reporter) => reporter.diagnostics),
+      );
       const filesScanned = new Set(
         reporters.map((reporter) => reporter.file).filter((file): file is string => Boolean(file)),
       );

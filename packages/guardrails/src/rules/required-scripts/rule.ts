@@ -1,5 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { Guardrail } from "../../constructs/guardrail";
 
 interface PackageJsonShape {
@@ -10,10 +8,10 @@ export class RequiredScriptsRule extends Guardrail {
   public readonly name = "required-scripts";
 
   protected async check() {
-    const packageJsonPath = resolve(this.getPackageRoot(), "package.json");
+    const packageJsonPath = this.resolvePackagePath("package.json");
     const reporter = this.createReporter(packageJsonPath);
 
-    if (!existsSync(packageJsonPath)) {
+    if (!this.packageFileExists("package.json")) {
       reporter.fail({
         error: "missing-package-json",
         description: "The required-scripts rule expects a package.json at the package root.",
@@ -22,7 +20,7 @@ export class RequiredScriptsRule extends Guardrail {
       return;
     }
 
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8")) as PackageJsonShape;
+    const packageJson = JSON.parse(this.readPackageFile("package.json")) as PackageJsonShape;
     const scripts = packageJson.scripts ?? {};
     const requiredScripts = this.getRequiredScripts();
     const missingScripts = requiredScripts.filter((scriptName) => !hasScript(scripts, scriptName));

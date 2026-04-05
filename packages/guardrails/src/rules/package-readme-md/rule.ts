@@ -1,15 +1,13 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { Guardrail } from "../../constructs/guardrail";
 
 export class PackageReadmeMdRule extends Guardrail {
   public readonly name = "package-readme-md";
 
   protected async check() {
-    const readmePath = resolve(this.getPackageRoot(), "README.md");
+    const readmePath = this.resolvePackagePath("README.md");
     const reporter = this.createReporter(readmePath);
 
-    if (!existsSync(readmePath)) {
+    if (!this.packageFileExists("README.md")) {
       reporter.fail({
         error: "missing-readme-md",
         description: "Packages must include a sidecar README.md at the package root.",
@@ -18,7 +16,7 @@ export class PackageReadmeMdRule extends Guardrail {
       return;
     }
 
-    const content = readFileSync(readmePath, "utf-8");
+    const content = this.readPackageFile("README.md");
     const lines = content.split("\n").map((line) => line.trim());
     const hasTopHeading = lines.some((line) => /^# /.test(line));
     const intentIndex = lines.indexOf("## Intent");

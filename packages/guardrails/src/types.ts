@@ -14,6 +14,7 @@ export interface GuardrailContext {
   packageDir: string;
   exclude: string[];
   options?: Record<string, unknown>;
+  paths?: string[];
 }
 
 export interface ExcludeEntry {

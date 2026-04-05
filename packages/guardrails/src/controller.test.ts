@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { Controller } from "./controller";
+import { GuardrailsTsGroup } from "./groups/guardrails-ts-group";
 import type { GuardrailConfig } from "./types";
 
 const tempDirectories: string[] = [];
@@ -45,7 +46,7 @@ describe("Controller", () => {
     const result = await controller.run(packageDir, config);
 
     expect(result.passed).toBe(true);
-    expect(result.results).toHaveLength(4);
+    expect(result.results).toHaveLength(GuardrailsTsGroup.baseRules().length);
   });
 
   it("reports dynamic imports and invalid path names", async () => {
