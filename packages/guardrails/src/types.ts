@@ -12,7 +12,6 @@ export interface Diagnostic extends DiagnosticError {
 
 export interface GuardrailContext {
   packageDir: string;
-  paths: string[];
   exclude: string[];
   options?: Record<string, unknown>;
 }
@@ -32,7 +31,6 @@ export interface GuardrailConfig {
 }
 
 export interface RuleConfig {
-  paths?: string[];
   options?: Record<string, unknown>;
   [key: string]: unknown;
 }

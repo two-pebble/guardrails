@@ -2,6 +2,8 @@ import { InvalidGuardrailConfigError } from "./errors";
 import type { ExcludeEntry, GuardrailConfig } from "./types";
 
 export function validateGuardrailConfig(config: GuardrailConfig) {
+  validateAdditionalRules(config.additional);
+
   if (config.exclude === undefined) {
     return;
   }
@@ -12,6 +14,28 @@ export function validateGuardrailConfig(config: GuardrailConfig) {
 
   for (const [index, entry] of config.exclude.entries()) {
     validateExcludeEntry(entry, index);
+  }
+}
+
+function validateAdditionalRules(additional: GuardrailConfig["additional"]) {
+  if (additional === undefined) {
+    return;
+  }
+
+  if (!isObject(additional)) {
+    throw new InvalidGuardrailConfigError("additional must be an object.");
+  }
+
+  for (const [ruleName, ruleConfig] of Object.entries(additional)) {
+    if (!isObject(ruleConfig)) {
+      throw new InvalidGuardrailConfigError(`additional.${ruleName} must be an object.`);
+    }
+
+    if ("paths" in ruleConfig) {
+      throw new InvalidGuardrailConfigError(
+        `additional.${ruleName}.paths is not supported; rules own their file matching.`,
+      );
+    }
   }
 }
 

@@ -38,7 +38,6 @@ export class Controller {
 
       const context: GuardrailContext = {
         packageDir,
-        paths: ruleConfig.paths ?? ["src/**"],
         exclude: Controller.getExcludesForRule(ruleName, excludes),
         options: { ...ruleConfig.options, ...ruleConfig },
       };

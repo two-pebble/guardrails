@@ -86,6 +86,40 @@ describe("Controller", () => {
       expect.arrayContaining(["folder-naming", "ts-uppercase", "dynamic-import"]),
     );
   });
+
+  it("reports a missing package root README.md", async () => {
+    const packageDir = createPackageFixture("missing-readme-package");
+    writeFileSync(
+      join(packageDir, "package.json"),
+      JSON.stringify({ name: "missing-readme-package", version: "0.1.0" }, null, 2),
+    );
+    mkdirSync(join(packageDir, "src"), { recursive: true });
+    writeFileSync(join(packageDir, "src", "example-rule.ts"), 'export const exampleRule = "ok";\n');
+
+    const controller = new Controller();
+    const config: GuardrailConfig = { inherit: "@group/guardrails-typescript" };
+    const result = await controller.run(packageDir, config);
+
+    expect(result.passed).toBe(false);
+    expect(result.results.flatMap((entry) => entry.diagnostics).map((entry) => entry.error)).toContain(
+      "missing-readme-md",
+    );
+  });
+
+  it("rejects custom rule paths in config", async () => {
+    const packageDir = createPackageFixture("invalid-config-package");
+    const controller = new Controller();
+
+    await expect(
+      controller.run(packageDir, {
+        additional: {
+          "@rule/no-dynamic-imports": {
+            paths: ["src/**/*.ts"],
+          },
+        },
+      }),
+    ).rejects.toThrow("additional.@rule/no-dynamic-imports.paths is not supported");
+  });
 });
 
 function createPackageFixture(prefix: string) {

@@ -3,9 +3,10 @@ import { Guardrail } from "../../constructs/guardrail";
 
 export class NoDynamicImportsRule extends Guardrail {
   public readonly name = "no-dynamic-imports";
+  private static readonly paths = ["src/**/*.ts", "src/**/*.tsx"] as const;
 
   protected async check() {
-    await this.forEachTypeScriptFile((_file, sourceFile, reporter) => {
+    await this.forEachTypeScriptFile(NoDynamicImportsRule.paths, (_file, sourceFile, reporter) => {
       const visit = (node: ts.Node) => {
         if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
           const line = sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1;

@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { posix } from "node:path";
 import { glob } from "tinyglobby";
 import ts from "typescript";
 import type { DiagnosticError, GuardrailContext } from "../types";
@@ -32,12 +33,22 @@ export abstract class Guardrail {
     return this.context.packageDir;
   }
 
+  protected getPackageRoot() {
+    return this.context.packageDir;
+  }
+
+  protected createReporter(file?: string) {
+    const reporter = new Reporter(this.name, file);
+    this.reporters.push(reporter);
+    return reporter;
+  }
+
   protected addReporter(reporter: Reporter) {
     this.reporters.push(reporter);
   }
 
-  protected async failOnRegex(pattern: RegExp, error: DiagnosticError) {
-    await this.forEachFileContent((_file, content, reporter) => {
+  protected async failOnRegex(paths: string | readonly string[], pattern: RegExp, error: DiagnosticError) {
+    await this.forEachFileContent(paths, (_file, content, reporter) => {
       const lines = content.split("\n");
       for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
         if (pattern.test(lines[lineIndex])) {
@@ -47,57 +58,48 @@ export abstract class Guardrail {
     });
   }
 
-  protected async forEachFile(callback: FileCallback) {
-    const files = await this.resolveFiles();
+  protected async forEachFile(paths: string | readonly string[], callback: FileCallback) {
+    const matchedPaths = Array.isArray(paths) ? paths : [paths];
+    const files = await this.resolvePaths(matchedPaths);
     for (const file of files) {
-      const reporter = new Reporter(this.name, file);
-      this.reporters.push(reporter);
+      const reporter = this.createReporter(file);
       await callback(file, reporter);
     }
   }
 
   protected async forEachMatchedFile(paths: string | readonly string[], callback: FileCallback) {
-    const matchedPaths = Array.isArray(paths) ? paths : [paths];
-    const files = await this.resolvePaths(matchedPaths);
-
-    for (const file of files) {
-      const reporter = new Reporter(this.name, file);
-      this.reporters.push(reporter);
-      await callback(file, reporter);
-    }
+    await this.forEachFile(paths, callback);
   }
 
-  protected async forEachFileContent(callback: FileContentCallback) {
-    await this.forEachFile(async (file, reporter) => {
+  protected async forEachFileContent(paths: string | readonly string[], callback: FileContentCallback) {
+    await this.forEachFile(paths, async (file, reporter) => {
       const content = readFileSync(file, "utf-8");
       await callback(file, content, reporter);
     });
   }
 
-  protected async forEachTypeScriptFile(callback: TypeScriptFileCallback) {
-    const resolved = await this.resolveFiles();
-    const files = resolved.filter((file) => /\.tsx?$/.test(file));
+  protected async forEachTypeScriptFile(paths: string | readonly string[], callback: TypeScriptFileCallback) {
+    const matchedPaths = Array.isArray(paths) ? paths : [paths];
+    const files = await this.resolvePaths(matchedPaths);
 
     for (const file of files) {
-      const reporter = new Reporter(this.name, file);
-      this.reporters.push(reporter);
+      const reporter = this.createReporter(file);
       const content = readFileSync(file, "utf-8");
       const sourceFile = ts.createSourceFile(file, content, ts.ScriptTarget.Latest, true);
       await callback(file, sourceFile, reporter);
     }
   }
 
-  protected async forEachDirectory(callback: DirectoryCallback) {
-    const files = await this.resolveFiles();
-    const directories = new Set<string>();
+  protected async forEachDirectory(paths: string | readonly string[], callback: DirectoryCallback) {
+    await this.forEachMatchedDirectory(paths, callback);
+  }
 
-    for (const file of files) {
-      directories.add(file.substring(0, file.lastIndexOf("/")));
-    }
+  protected async forEachMatchedDirectory(paths: string | readonly string[], callback: DirectoryCallback) {
+    const matchedPaths = Array.isArray(paths) ? paths : [paths];
+    const directories = await this.resolveDirectories(matchedPaths);
 
     for (const directory of directories) {
-      const reporter = new Reporter(this.name, directory);
-      this.reporters.push(reporter);
+      const reporter = this.createReporter(directory);
       await callback(directory, reporter);
     }
   }
@@ -110,7 +112,26 @@ export abstract class Guardrail {
     });
   }
 
-  private async resolveFiles() {
-    return this.resolvePaths(this.context.paths);
+  private async resolveDirectories(paths: readonly string[]) {
+    return glob(Guardrail.toDirectoryPatterns(paths), {
+      absolute: true,
+      cwd: this.context.packageDir,
+      ignore: ["**/node_modules/**", ...this.context.exclude],
+      onlyDirectories: true,
+    });
+  }
+
+  private static toDirectoryPatterns(paths: readonly string[]) {
+    return [...new Set(paths.map((path) => Guardrail.toDirectoryPattern(path)))];
+  }
+
+  private static toDirectoryPattern(path: string) {
+    const normalizedPath = path.replaceAll("\\", "/");
+
+    if (normalizedPath.endsWith("/")) {
+      return normalizedPath;
+    }
+
+    return posix.dirname(normalizedPath);
   }
 }
