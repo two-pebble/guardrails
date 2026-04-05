@@ -120,6 +120,51 @@ describe("Controller", () => {
       }),
     ).rejects.toThrow("additional.@rule/no-dynamic-imports.paths is not supported");
   });
+
+  it("reports missing required package scripts", async () => {
+    const packageDir = createPackageFixture("missing-scripts-package");
+    writeFileSync(
+      join(packageDir, "package.json"),
+      JSON.stringify(
+        {
+          name: "missing-scripts-package",
+          version: "0.1.0",
+          scripts: {
+            build: "tsc --project tsconfig.build.json",
+          },
+        },
+        null,
+        2,
+      ),
+    );
+
+    const controller = new Controller();
+    const result = await controller.run(packageDir, {
+      additional: {
+        "@rule/required-scripts": {
+          requiredScripts: ["build", "test", "typecheck"],
+        },
+      },
+    });
+
+    expect(result.passed).toBe(false);
+    expect(result.results.flatMap((entry) => entry.diagnostics).map((entry) => entry.error)).toContain(
+      "missing-required-scripts",
+    );
+  });
+
+  it("rejects required-scripts config without a script list", async () => {
+    const packageDir = createPackageFixture("invalid-required-scripts-config");
+    const controller = new Controller();
+
+    await expect(
+      controller.run(packageDir, {
+        additional: {
+          "@rule/required-scripts": {},
+        },
+      }),
+    ).rejects.toThrow("additional.@rule/required-scripts.requiredScripts must be a non-empty array of strings");
+  });
 });
 
 function createPackageFixture(prefix: string) {

@@ -8,6 +8,14 @@ export interface RuleDoc {
   docsSourcePath: string;
 }
 
+export interface GroupDoc {
+  slug: string;
+  title: string;
+  summary: string;
+  markdown: string;
+  ruleSlugs: string[];
+}
+
 export const ruleDocs: RuleDoc[] = [
   {
     slug: "no-dynamic-imports",
@@ -20,7 +28,7 @@ export const ruleDocs: RuleDoc[] = [
   },
   {
     slug: "package-readme-md",
-    title: "Package Readme Md",
+    title: "Package README.md",
     summary: "Requires every package to ship a sidecar `README.md` next to its `package.json`.",
     markdown:
       "## What It Checks\n\nRequires every package to ship a sidecar `README.md` next to its `package.json`.\n\n## Why It Exists\n\nThis keeps each package self-describing and ensures published packages always include a minimal intent and usage guide.\n\n## Passing Pattern\n\n````md\n# Package Name\n\n## Intent\n\nDescribe what the package is for.\n\n## Examples\n\n```bash\npnpm run guard\n```\n````\n\n## Failing Pattern\n\n```md\n# Package Name\n\n## Overview\n\nMissing the required Intent and Examples sections.\n```",
@@ -38,11 +46,31 @@ export const ruleDocs: RuleDoc[] = [
   },
   {
     slug: "prefer-md-extension",
-    title: "Prefer Md Extension",
+    title: "Prefer .md Extension",
     summary: "Disallows the `.markdown` file extension and requires `.md` instead.",
     markdown:
       "## What It Checks\n\nDisallows the `.markdown` file extension and requires `.md` instead.\n\n## Why It Exists\n\nUsing one markdown extension keeps rule sidecars and docs tooling predictable across the repository.\n\n## Passing Pattern\n\n```text\nsrc/rules/no-dynamic-imports/docs.md\n```\n\n## Failing Pattern\n\n```text\nsrc/rules/no-dynamic-imports/docs.markdown\n```",
     ruleSourcePath: "packages/guardrails/src/rules/prefer-md-extension/rule.ts",
     docsSourcePath: "packages/guardrails/src/rules/prefer-md-extension/docs.md",
+  },
+  {
+    slug: "required-scripts",
+    title: "Required Scripts",
+    summary: "Requires the package root `package.json` to define a configured list of script names.",
+    markdown:
+      '## What It Checks\n\nRequires the package root `package.json` to define a configured list of script names.\n\n## Why It Exists\n\nThis keeps package entrypoints predictable so every package exposes the scripts your tooling expects.\n\n## Config\n\n```json\n{\n  "additional": {\n    "@rule/required-scripts": {\n      "requiredScripts": ["build", "test", "typecheck"]\n    }\n  }\n}\n```\n\n## Passing Pattern\n\n```json\n{\n  "scripts": {\n    "build": "tsc --project tsconfig.build.json",\n    "test": "vitest run",\n    "typecheck": "tsc --noEmit"\n  }\n}\n```\n\n## Failing Pattern\n\n```json\n{\n  "scripts": {\n    "build": "tsc --project tsconfig.build.json"\n  }\n}\n```',
+    ruleSourcePath: "packages/guardrails/src/rules/required-scripts/rule.ts",
+    docsSourcePath: "packages/guardrails/src/rules/required-scripts/docs.md",
+  },
+];
+
+export const groupDocs: GroupDoc[] = [
+  {
+    slug: "guardrails-typescript",
+    title: "Guardrails TypeScript",
+    summary: "Guardrails TypeScript bundles 4 related rules into one opt-in group.",
+    markdown:
+      '## What It Includes\n\nGuardrails TypeScript bundles 4 related rules into one opt-in group.\n\n## Enable This Group\n\n```json\n{\n  "inherit": "@group/guardrails-typescript"\n}\n```\n\n## Included Rules\n\n- `path-names-kebab-case` - Requires TypeScript file and folder names to stay lowercase and use hyphens instead of underscores.\n- `no-dynamic-imports` - Disallows dynamic `import()` calls and inline import type queries inside TypeScript source files.\n- `package-readme-md` - Requires every package to ship a sidecar `README.md` next to its `package.json`.\n- `prefer-md-extension` - Disallows the `.markdown` file extension and requires `.md` instead.',
+    ruleSlugs: ["path-names-kebab-case", "no-dynamic-imports", "package-readme-md", "prefer-md-extension"],
   },
 ];

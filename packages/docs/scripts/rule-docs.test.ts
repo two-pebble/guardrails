@@ -53,19 +53,32 @@ describe("feature: rule docs generation", () => {
   });
 
   test("success: builds a generated module from collected rule docs", () => {
-    const moduleContents = buildGeneratedModule([
-      {
-        slug: "path-names-kebab-case",
-        title: formatRuleTitle("path-names-kebab-case"),
-        summary: "Requires lowercase path names.",
-        markdown: "## What It Checks\n\nRequires lowercase path names.",
-        ruleSourcePath: "packages/guardrails/src/rules/path-names-kebab-case/rule.ts",
-        docsSourcePath: "packages/guardrails/src/rules/path-names-kebab-case/docs.md",
-      },
-    ]);
+    const moduleContents = buildGeneratedModule(
+      [
+        {
+          slug: "path-names-kebab-case",
+          title: formatRuleTitle("path-names-kebab-case"),
+          summary: "Requires lowercase path names.",
+          markdown: "## What It Checks\n\nRequires lowercase path names.",
+          ruleSourcePath: "packages/guardrails/src/rules/path-names-kebab-case/rule.ts",
+          docsSourcePath: "packages/guardrails/src/rules/path-names-kebab-case/docs.md",
+        },
+      ],
+      [
+        {
+          slug: "guardrails-typescript",
+          title: formatRuleTitle("guardrails-typescript"),
+          summary: "Guardrails TypeScript bundles 2 related rules into one opt-in group.",
+          markdown: "## What It Includes\n\nGuardrails TypeScript bundles 2 related rules into one opt-in group.",
+          ruleSlugs: ["path-names-kebab-case", "no-dynamic-imports"],
+        },
+      ],
+    );
 
     expect(moduleContents).toContain("export const ruleDocs: RuleDoc[] = [");
+    expect(moduleContents).toContain("export const groupDocs: GroupDoc[] = [");
     expect(moduleContents).toContain('slug: "path-names-kebab-case"');
+    expect(moduleContents).toContain('slug: "guardrails-typescript"');
   });
 });
 
