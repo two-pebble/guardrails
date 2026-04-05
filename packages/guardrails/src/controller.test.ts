@@ -1,0 +1,95 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { Controller } from "./controller";
+import type { GuardrailConfig } from "./types";
+
+const tempDirectories: string[] = [];
+
+describe("Controller", () => {
+  afterEach(() => {
+    for (const directory of tempDirectories.splice(0)) {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("passes for the TypeScript group when files match the selected guardrails", async () => {
+    const packageDir = createPackageFixture("passing-package");
+    writeFileSync(
+      join(packageDir, "README.md"),
+      [
+        "# Passing Package",
+        "",
+        "## Intent",
+        "",
+        "Describe intent.",
+        "",
+        "## Examples",
+        "",
+        "```ts",
+        "export {};",
+        "```",
+        "",
+      ].join("\n"),
+    );
+    writeFileSync(
+      join(packageDir, "package.json"),
+      JSON.stringify({ name: "passing-package", version: "0.1.0" }, null, 2),
+    );
+    mkdirSync(join(packageDir, "src"), { recursive: true });
+    writeFileSync(join(packageDir, "src", "example-rule.ts"), 'export const exampleRule = "ok";\n');
+
+    const controller = new Controller();
+    const config: GuardrailConfig = { inherit: "@group/guardrails-typescript" };
+    const result = await controller.run(packageDir, config);
+
+    expect(result.passed).toBe(true);
+    expect(result.results).toHaveLength(3);
+  });
+
+  it("reports dynamic imports and invalid path names", async () => {
+    const packageDir = createPackageFixture("failing-package");
+    writeFileSync(
+      join(packageDir, "README.md"),
+      [
+        "# Failing Package",
+        "",
+        "## Intent",
+        "",
+        "Describe intent.",
+        "",
+        "## Examples",
+        "",
+        "```ts",
+        "export {};",
+        "```",
+        "",
+      ].join("\n"),
+    );
+    writeFileSync(
+      join(packageDir, "package.json"),
+      JSON.stringify({ name: "failing-package", version: "0.1.0" }, null, 2),
+    );
+    mkdirSync(join(packageDir, "src", "Bad_Folder"), { recursive: true });
+    writeFileSync(
+      join(packageDir, "src", "Bad_Folder", "BadFile.ts"),
+      'export async function loadRule() {\n  return import("./other.ts");\n}\n',
+    );
+
+    const controller = new Controller();
+    const config: GuardrailConfig = { inherit: "@group/guardrails-typescript" };
+    const result = await controller.run(packageDir, config);
+
+    expect(result.passed).toBe(false);
+    expect(result.results.flatMap((entry) => entry.diagnostics).map((entry) => entry.error)).toEqual(
+      expect.arrayContaining(["folder-naming", "ts-uppercase", "dynamic-import"]),
+    );
+  });
+});
+
+function createPackageFixture(prefix: string) {
+  const directory = mkdtempSync(join(tmpdir(), `${prefix}-`));
+  tempDirectories.push(directory);
+  return directory;
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@guardrails/docs",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm run generate:rule-docs && vite build && pnpm run generate:rule-pages",
+    "dev": "pnpm run generate:rule-docs && vite",
+    "generate:rule-docs": "tsx ./scripts/generate-rule-docs.ts",
+    "generate:rule-pages": "tsx ./scripts/generate-static-rule-pages.ts",
+    "preview": "vite preview",
+    "test": "pnpm run generate:rule-docs && vitest --config vitest.config.ts run",
+    "typecheck": "pnpm run generate:rule-docs && tsc --project tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "marked": "^16.4.1",
+    "tinyglobby": "^0.2.15"
+  }
+}

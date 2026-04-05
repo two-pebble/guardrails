@@ -1,0 +1,53 @@
+name: Publish Guardrails Package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Normalize GitHub owner
+        id: owner
+        run: echo "lower=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.22.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+          scope: ${{ steps.owner.outputs.lower }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @guardrails/guardrails build
+
+      - name: Set GitHub Packages scope
+        working-directory: packages/guardrails
+        run: |
+          node -e "
+          const fs = require('node:fs');
+          const owner = process.env.OWNER_LOWER;
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.name = '@' + owner + '/guardrails';
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+        env:
+          OWNER_LOWER: ${{ steps.owner.outputs.lower }}
+
+      - run: pnpm publish --no-git-checks
+        working-directory: packages/guardrails
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

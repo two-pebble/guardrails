@@ -1,0 +1,39 @@
+{
+  "name": "@guardrails/guardrails",
+  "version": "0.1.0",
+  "description": "Publishable Guardrails package scaffold.",
+  "type": "module",
+  "sideEffects": false,
+  "bin": {
+    "guardrails": "./bin/guardrails.mjs"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "README.md"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "guard": "tsx ./src/cli.ts",
+    "test": "vitest --config vitest.config.ts run",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1",
+    "tinyglobby": "^0.2.15",
+    "typescript": "^6.0.2"
+  }
+}

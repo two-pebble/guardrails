@@ -1,0 +1,29 @@
+{
+  "name": "guardrails",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.22.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "check": "biome check .",
+    "ci": "biome ci . && pnpm run typecheck && pnpm run test && pnpm run guard && pnpm run build",
+    "docs:dev": "pnpm --filter @guardrails/docs dev",
+    "docs:preview": "pnpm --filter @guardrails/docs preview",
+    "format": "biome format --write .",
+    "guard": "pnpm --dir packages/guardrails run guard",
+    "lint": "biome lint .",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.10",
+    "@types/node": "^25.5.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vite": "6.4.1",
+    "vitest": "^4.1.2"
+  }
+}
