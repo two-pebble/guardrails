@@ -15,6 +15,7 @@ export class GuardrailsTsGroup extends Group {
       { rule: "path-names-kebab-case", config: ts },
       { rule: "no-dynamic-imports", config: ts },
       { rule: "package-readme-md", config: { paths: ["**/package.json"] } },
+      { rule: "prefer-md-extension", config: { paths: ["**/*.markdown"] } },
     ];
   }
 }

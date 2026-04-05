@@ -13,7 +13,7 @@ export interface RuleDoc {
 
 export async function collectRuleDocs(docsPackageDir: string) {
   const repositoryRoot = resolve(docsPackageDir, "../..");
-  const docsPaths = await glob("packages/guardrails/src/rules/**/docs.markdown", {
+  const docsPaths = await glob("packages/guardrails/src/rules/**/docs.md", {
     absolute: true,
     cwd: repositoryRoot,
   });
@@ -57,7 +57,7 @@ export async function writeStaticRulePages(docsPackageDir: string) {
     const pageDirectory = resolve(distDirectory, "rules", ruleDoc.slug);
     mkdirSync(pageDirectory, { recursive: true });
     copyFileSync(indexHtmlPath, resolve(pageDirectory, "index.html"));
-    writeFileSync(resolve(pageDirectory, "docs.markdown"), `${ruleDoc.markdown}\n`);
+    writeFileSync(resolve(pageDirectory, "docs.md"), `${ruleDoc.markdown}\n`);
   }
 }
 

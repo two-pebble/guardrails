@@ -13,24 +13,36 @@ export const ruleDocs: RuleDoc[] = [
     slug: "no-dynamic-imports",
     title: "No Dynamic Imports",
     summary: "Disallows dynamic `import()` calls and inline import type queries inside TypeScript source files.",
-    markdown: "## What It Checks\n\nDisallows dynamic `import()` calls and inline import type queries inside TypeScript source files.\n\n## Why It Exists\n\nThis keeps module boundaries static and easier to reason about across the codebase.\n\n## Passing Pattern\n\n```ts\nimport { loadConfig } from \"./load-config\";\n\nexport async function runGuardrail() {\n  return loadConfig();\n}\n```\n\n## Failing Pattern\n\n```ts\nexport async function runGuardrail() {\n  return import(\"./load-config\");\n}\n```",
+    markdown:
+      '## What It Checks\n\nDisallows dynamic `import()` calls and inline import type queries inside TypeScript source files.\n\n## Why It Exists\n\nThis keeps module boundaries static and easier to reason about across the codebase.\n\n## Passing Pattern\n\n```ts\nimport { loadConfig } from "./load-config";\n\nexport async function runGuardrail() {\n  return loadConfig();\n}\n```\n\n## Failing Pattern\n\n```ts\nexport async function runGuardrail() {\n  return import("./load-config");\n}\n```',
     ruleSourcePath: "packages/guardrails/src/rules/no-dynamic-imports/rule.ts",
-    docsSourcePath: "packages/guardrails/src/rules/no-dynamic-imports/docs.markdown",
+    docsSourcePath: "packages/guardrails/src/rules/no-dynamic-imports/docs.md",
   },
   {
     slug: "package-readme-md",
     title: "Package Readme Md",
     summary: "Requires every package to ship a sidecar `README.md` next to its `package.json`.",
-    markdown: "## What It Checks\n\nRequires every package to ship a sidecar `README.md` next to its `package.json`.\n\n## Why It Exists\n\nThis keeps each package self-describing and ensures published packages always include a minimal intent and usage guide.\n\n## Passing Pattern\n\n````md\n# Package Name\n\n## Intent\n\nDescribe what the package is for.\n\n## Examples\n\n```bash\npnpm run guard\n```\n````\n\n## Failing Pattern\n\n```md\n# Package Name\n\n## Overview\n\nMissing the required Intent and Examples sections.\n```",
+    markdown:
+      "## What It Checks\n\nRequires every package to ship a sidecar `README.md` next to its `package.json`.\n\n## Why It Exists\n\nThis keeps each package self-describing and ensures published packages always include a minimal intent and usage guide.\n\n## Passing Pattern\n\n````md\n# Package Name\n\n## Intent\n\nDescribe what the package is for.\n\n## Examples\n\n```bash\npnpm run guard\n```\n````\n\n## Failing Pattern\n\n```md\n# Package Name\n\n## Overview\n\nMissing the required Intent and Examples sections.\n```",
     ruleSourcePath: "packages/guardrails/src/rules/package-readme-md/rule.ts",
-    docsSourcePath: "packages/guardrails/src/rules/package-readme-md/docs.markdown",
+    docsSourcePath: "packages/guardrails/src/rules/package-readme-md/docs.md",
   },
   {
     slug: "path-names-kebab-case",
     title: "Path Names Kebab Case",
     summary: "Requires TypeScript file and folder names to stay lowercase and use hyphens instead of underscores.",
-    markdown: "## What It Checks\n\nRequires TypeScript file and folder names to stay lowercase and use hyphens instead of underscores.\n\n## Why It Exists\n\nConsistent path naming makes imports more predictable and prevents casing drift across platforms.\n\n## Passing Pattern\n\n```text\nsrc/rules/no-dynamic-imports/rule.ts\n```\n\n## Failing Pattern\n\n```text\nsrc/Bad_Folder/BadFile.ts\n```",
+    markdown:
+      "## What It Checks\n\nRequires TypeScript file and folder names to stay lowercase and use hyphens instead of underscores.\n\n## Why It Exists\n\nConsistent path naming makes imports more predictable and prevents casing drift across platforms.\n\n## Passing Pattern\n\n```text\nsrc/rules/no-dynamic-imports/rule.ts\n```\n\n## Failing Pattern\n\n```text\nsrc/Bad_Folder/BadFile.ts\n```",
     ruleSourcePath: "packages/guardrails/src/rules/path-names-kebab-case/rule.ts",
-    docsSourcePath: "packages/guardrails/src/rules/path-names-kebab-case/docs.markdown",
-  }
+    docsSourcePath: "packages/guardrails/src/rules/path-names-kebab-case/docs.md",
+  },
+  {
+    slug: "prefer-md-extension",
+    title: "Prefer Md Extension",
+    summary: "Disallows the `.markdown` file extension and requires `.md` instead.",
+    markdown:
+      "## What It Checks\n\nDisallows the `.markdown` file extension and requires `.md` instead.\n\n## Why It Exists\n\nUsing one markdown extension keeps rule sidecars and docs tooling predictable across the repository.\n\n## Passing Pattern\n\n```text\nsrc/rules/no-dynamic-imports/docs.md\n```\n\n## Failing Pattern\n\n```text\nsrc/rules/no-dynamic-imports/docs.markdown\n```",
+    ruleSourcePath: "packages/guardrails/src/rules/prefer-md-extension/rule.ts",
+    docsSourcePath: "packages/guardrails/src/rules/prefer-md-extension/docs.md",
+  },
 ];

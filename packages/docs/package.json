@@ -6,7 +6,7 @@
   "scripts": {
     "build": "pnpm run generate:rule-docs && vite build && pnpm run generate:rule-pages",
     "dev": "pnpm run generate:rule-docs && vite",
-    "generate:rule-docs": "tsx ./scripts/generate-rule-docs.ts",
+    "generate:rule-docs": "tsx ./scripts/generate-rule-docs.ts && pnpm exec biome format --write ./src/generated/rule-docs.ts",
     "generate:rule-pages": "tsx ./scripts/generate-static-rule-pages.ts",
     "preview": "vite preview",
     "test": "pnpm run generate:rule-docs && vitest --config vitest.config.ts run",

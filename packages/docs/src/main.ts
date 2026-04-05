@@ -46,7 +46,7 @@ function renderIndexPage() {
         <p class="eyebrow">Guardrails</p>
         <h1>Rule docs generated from source sidecars.</h1>
         <p class="lede">
-          Every rule page is inferred from its folder on disk and rendered from the adjacent <code>docs.markdown</code> file.
+          Every rule page is inferred from its folder on disk and rendered from the adjacent <code>docs.md</code> file.
         </p>
       </section>
       <section class="rule-list">

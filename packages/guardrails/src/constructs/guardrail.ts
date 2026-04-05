@@ -56,6 +56,17 @@ export abstract class Guardrail {
     }
   }
 
+  protected async forEachMatchedFile(paths: string | readonly string[], callback: FileCallback) {
+    const matchedPaths = Array.isArray(paths) ? paths : [paths];
+    const files = await this.resolvePaths(matchedPaths);
+
+    for (const file of files) {
+      const reporter = new Reporter(this.name, file);
+      this.reporters.push(reporter);
+      await callback(file, reporter);
+    }
+  }
+
   protected async forEachFileContent(callback: FileContentCallback) {
     await this.forEachFile(async (file, reporter) => {
       const content = readFileSync(file, "utf-8");

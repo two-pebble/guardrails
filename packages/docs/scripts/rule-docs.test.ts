@@ -13,14 +13,14 @@ describe("feature: rule docs generation", () => {
     }
   });
 
-  test("success: collects rule docs from sidecar markdown files", async () => {
+  test("success: collects rule docs from sidecar md files", async () => {
     const repositoryRoot = createRepositoryFixture();
     const ruleDirectory = join(repositoryRoot, "packages/guardrails/src/rules/no-dynamic-imports");
 
     mkdirSync(ruleDirectory, { recursive: true });
     writeFileSync(join(ruleDirectory, "rule.ts"), "export class NoDynamicImportsRule {}\n");
     writeFileSync(
-      join(ruleDirectory, "docs.markdown"),
+      join(ruleDirectory, "docs.md"),
       [
         "## What It Checks",
         "",
@@ -47,7 +47,7 @@ describe("feature: rule docs generation", () => {
         summary: "Disallows dynamic import() calls.",
         markdown: expect.stringContaining("## What It Checks"),
         ruleSourcePath: "packages/guardrails/src/rules/no-dynamic-imports/rule.ts",
-        docsSourcePath: "packages/guardrails/src/rules/no-dynamic-imports/docs.markdown",
+        docsSourcePath: "packages/guardrails/src/rules/no-dynamic-imports/docs.md",
       },
     ]);
   });
@@ -60,7 +60,7 @@ describe("feature: rule docs generation", () => {
         summary: "Requires lowercase path names.",
         markdown: "## What It Checks\n\nRequires lowercase path names.",
         ruleSourcePath: "packages/guardrails/src/rules/path-names-kebab-case/rule.ts",
-        docsSourcePath: "packages/guardrails/src/rules/path-names-kebab-case/docs.markdown",
+        docsSourcePath: "packages/guardrails/src/rules/path-names-kebab-case/docs.md",
       },
     ]);
 

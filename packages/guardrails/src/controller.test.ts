@@ -45,7 +45,7 @@ describe("Controller", () => {
     const result = await controller.run(packageDir, config);
 
     expect(result.passed).toBe(true);
-    expect(result.results).toHaveLength(3);
+    expect(result.results).toHaveLength(4);
   });
 
   it("reports dynamic imports and invalid path names", async () => {
