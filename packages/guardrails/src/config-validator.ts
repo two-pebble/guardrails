@@ -31,28 +31,18 @@ function validateAdditionalRules(additional: GuardrailConfig["additional"]) {
       throw new InvalidGuardrailConfigError(`additional.${ruleName} must be an object.`);
     }
 
+    if ("options" in ruleConfig) {
+      throw new InvalidGuardrailConfigError(
+        `additional.${ruleName}.options is not supported; put rule config fields at the top level.`,
+      );
+    }
+
     if ("paths" in ruleConfig) {
       throw new InvalidGuardrailConfigError(
         `additional.${ruleName}.paths is not supported; rules own their file matching.`,
       );
     }
-
-    if (stripRulePrefix(ruleName) === "required-scripts") {
-      validateRequiredScriptsRuleConfig(ruleName, ruleConfig);
-    }
   }
-}
-
-function validateRequiredScriptsRuleConfig(ruleName: string, ruleConfig: Record<string, unknown>) {
-  const requiredScripts = ruleConfig.requiredScripts;
-
-  if (requiredScripts === undefined) {
-    throw new InvalidGuardrailConfigError(
-      `additional.${ruleName}.requiredScripts must be a non-empty array of strings.`,
-    );
-  }
-
-  validateStringArray(requiredScripts, `additional.${ruleName}.requiredScripts`);
 }
 
 function validateExcludeEntry(entry: ExcludeEntry, index: number) {
@@ -87,8 +77,4 @@ function validateNonEmptyString(value: unknown, field: string) {
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function stripRulePrefix(ruleName: string) {
-  return ruleName.startsWith("@rule/") ? ruleName.slice("@rule/".length) : ruleName;
 }
