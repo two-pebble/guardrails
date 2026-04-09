@@ -271,7 +271,7 @@ function renderGuidePage(section: string, page: (typeof getStartedDocs)[number])
       </div>
       <aside class="page-rail">
         ${renderKeyValuePanel("Setup", [
-          { label: "Package", value: "@guardrails/guardrails" },
+          { label: "Package", value: "@two-pebble/guard" },
           { label: "Entrypoint", value: "guardrails" },
           { label: "Config file", value: "guard.json" },
         ])}
@@ -528,10 +528,7 @@ function highlightJson(source: string) {
 }
 
 function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
 function renderCommandPanel(title: string, command: string) {

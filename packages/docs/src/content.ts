@@ -36,7 +36,7 @@ export const getStartedDocs: StaticDocPage[] = [
       "Add Guardrails to the workspace or package where you want to run the checks.",
       "",
       "```bash",
-      "pnpm add -D @guardrails/guardrails",
+      "pnpm add -D @two-pebble/guard",
       "```",
       "",
       "## 2. Add A `guard.json` File",

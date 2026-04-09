@@ -2,20 +2,24 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const registryUrl = "https://npm.pkg.github.com";
-const timeZone = "America/Los_Angeles";
+const registryUrl = "https://registry.npmjs.org";
 const packageJsonPath = resolve(import.meta.dirname, "..", "package.json");
 
-const owner = process.env.OWNER_LOWER;
+const publishScope = process.env.PUBLISH_SCOPE;
+const publishPackageName = process.env.PUBLISH_PACKAGE_NAME;
 
-if (!owner) {
-  throw new Error("OWNER_LOWER is required.");
+if (!publishScope) {
+  throw new Error("PUBLISH_SCOPE is required.");
+}
+
+if (!publishPackageName) {
+  throw new Error("PUBLISH_PACKAGE_NAME is required.");
 }
 
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
-const packageName = `@${owner}/guardrails`;
+const packageName = `@${publishScope}/${publishPackageName}`;
 const existingVersions = loadExistingVersions(packageName);
-const publishVersion = getNextPublishVersion(existingVersions, getPublishDateParts());
+const publishVersion = getNextPublishVersion(packageJson.version, existingVersions);
 
 packageJson.name = packageName;
 packageJson.version = publishVersion;
@@ -59,71 +63,74 @@ function parseVersionsJson(rawValue) {
   return Array.isArray(parsed) ? parsed.filter((entry) => typeof entry === "string") : [];
 }
 
-function getPublishDateParts() {
-  const overriddenDate = process.env.PUBLISH_DATE;
-  const date = overriddenDate ? new Date(overriddenDate) : new Date();
+function getNextPublishVersion(configuredVersion, existingVersions) {
+  const normalizedConfiguredVersion = parseSemver(configuredVersion);
+  const latestPublishedVersion = getLatestPublishedVersion(existingVersions);
 
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    day: "numeric",
-    month: "numeric",
-    timeZone,
-    year: "numeric",
+  if (!latestPublishedVersion) {
+    return configuredVersion;
+  }
+
+  if (compareSemver(normalizedConfiguredVersion, latestPublishedVersion) > 0) {
+    return configuredVersion;
+  }
+
+  return formatSemver({
+    major: latestPublishedVersion.major,
+    minor: latestPublishedVersion.minor,
+    patch: latestPublishedVersion.patch + 1,
   });
+}
 
-  const parts = formatter.formatToParts(date);
+function getLatestPublishedVersion(existingVersions) {
+  return existingVersions
+    .map((version) => tryParseSemver(version))
+    .filter((version) => version !== null)
+    .reduce((latestVersion, version) => {
+      if (!latestVersion) {
+        return version;
+      }
+
+      return compareSemver(version, latestVersion) > 0 ? version : latestVersion;
+    }, null);
+}
+
+function parseSemver(version) {
+  const parsedVersion = tryParseSemver(version);
+
+  if (!parsedVersion) {
+    throw new Error(`Expected a semantic version like x.y.z, received "${version}".`);
+  }
+
+  return parsedVersion;
+}
+
+function tryParseSemver(version) {
+  const match = /^(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$/.exec(version);
+
+  if (!match?.groups) {
+    return null;
+  }
 
   return {
-    year: Number(getDatePart(parts, "year")),
-    month: Number(getDatePart(parts, "month")),
-    day: Number(getDatePart(parts, "day")),
+    major: Number(match.groups.major),
+    minor: Number(match.groups.minor),
+    patch: Number(match.groups.patch),
   };
 }
 
-function getDatePart(parts, type) {
-  const part = parts.find((entry) => entry.type === type);
-
-  if (!part) {
-    throw new Error(`Missing ${type} in publish date.`);
+function compareSemver(leftVersion, rightVersion) {
+  if (leftVersion.major !== rightVersion.major) {
+    return leftVersion.major - rightVersion.major;
   }
 
-  return part.value;
+  if (leftVersion.minor !== rightVersion.minor) {
+    return leftVersion.minor - rightVersion.minor;
+  }
+
+  return leftVersion.patch - rightVersion.patch;
 }
 
-function getNextPublishVersion(existingVersions, dateParts) {
-  const baseVersion = `${dateParts.year}.${dateParts.month}.${dateParts.day}`;
-
-  if (!existingVersions.includes(baseVersion)) {
-    return baseVersion;
-  }
-
-  const usedSuffixes = existingVersions
-    .filter((version) => version.startsWith(`${baseVersion}-`))
-    .map((version) => version.slice(`${baseVersion}-`.length))
-    .filter((suffix) => /^[a-z]+$/.test(suffix));
-
-  let suffixIndex = 1;
-
-  while (usedSuffixes.includes(toLetterSuffix(suffixIndex))) {
-    suffixIndex += 1;
-  }
-
-  return `${baseVersion}-${toLetterSuffix(suffixIndex)}`;
-}
-
-function toLetterSuffix(index) {
-  return toAlphabeticLabel(index + 1);
-}
-
-function toAlphabeticLabel(index) {
-  const alphabet = "abcdefghijklmnopqrstuvwxyz";
-  let remaining = index;
-  let result = "";
-
-  while (remaining > 0) {
-    remaining -= 1;
-    result = `${alphabet[remaining % 26]}${result}`;
-    remaining = Math.floor(remaining / 26);
-  }
-
-  return result;
+function formatSemver(version) {
+  return `${version.major}.${version.minor}.${version.patch}`;
 }

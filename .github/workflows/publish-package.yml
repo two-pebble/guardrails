@@ -10,13 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
-
-      - name: Normalize GitHub owner
-        id: owner
-        run: echo "lower=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - uses: pnpm/action-setup@v4
         with:
@@ -26,21 +21,21 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          registry-url: https://npm.pkg.github.com
-          scope: ${{ steps.owner.outputs.lower }}
+          registry-url: https://registry.npmjs.org
 
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm --filter @guardrails/guardrails build
 
-      - name: Prepare GitHub Packages name and version
+      - name: Prepare npm package name and version
         working-directory: packages/guardrails
         run: node ./scripts/prepare-publish-package.mjs
         env:
-          OWNER_LOWER: ${{ steps.owner.outputs.lower }}
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PUBLISH_PACKAGE_NAME: guard
+          PUBLISH_SCOPE: two-pebble
 
       - run: pnpm publish --no-git-checks
         working-directory: packages/guardrails
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
