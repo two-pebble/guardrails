@@ -3,7 +3,7 @@ import { posix, relative, resolve } from "node:path";
 import { glob } from "tinyglobby";
 import ts from "typescript";
 import { InvalidGuardrailUsageError } from "../errors";
-import type { DiagnosticError, GuardrailContext } from "../types";
+import type { DiagnosticError, GuardrailContext, RuleOptions } from "../types";
 import type {
   DirectoryCallback,
   DirectoryPathsOrCallback,
@@ -23,14 +23,14 @@ import { Reporter } from "./reporter";
 /**
  * Provides shared package-scoped file iteration helpers for individual guardrail rules.
  */
-export abstract class Guardrail {
+export abstract class Guardrail<TOptions extends object = RuleOptions> {
   private static readonly sourceTypeScriptPaths = ["src/**/*.ts", "src/**/*.tsx"] as const;
   private static readonly testTypeScriptPaths = ["src/**/*.test.ts", "src/**/*.test.tsx"] as const;
   private static readonly tsxPaths = ["src/**/*.tsx"] as const;
   private static readonly componentStoryPaths = ["src/components/**/*.story.tsx"] as const;
   private static readonly vitestConfigPaths = ["vitest.config.ts"] as const;
   public abstract readonly name: string;
-  private context!: GuardrailContext;
+  private context!: GuardrailContext<RuleOptions>;
   private reporters: Reporter[] = [];
 
   // Executes the rule with package-scoped context and returns collected reporters.
@@ -43,8 +43,8 @@ export abstract class Guardrail {
 
   protected abstract check(): Promise<void>;
 
-  protected get options() {
-    return this.context.options ?? {};
+  protected get options(): Readonly<TOptions> {
+    return (this.context.options ?? {}) as TOptions;
   }
 
   protected get packageDir() {

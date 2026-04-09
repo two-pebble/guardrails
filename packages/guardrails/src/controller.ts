@@ -44,7 +44,7 @@ export class Controller {
       const context: GuardrailContext = {
         packageDir,
         exclude: Controller.getExcludesForRule(ruleName, excludes),
-        options: { ...ruleConfig.options, ...ruleConfig },
+        options: ruleConfig,
       };
 
       const ruleStart = performance.now();

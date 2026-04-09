@@ -1,13 +1,15 @@
 import { Guardrail } from "../../constructs/guardrail";
-import type { PackageJsonShape } from "./types";
+import { InvalidGuardrailConfigError } from "../../errors";
+import type { PackageJsonShape, RequiredScriptsRuleConfig } from "./types";
 
 /**
  * Requires package.json to define a configured list of scripts.
  */
-export class RequiredScriptsRule extends Guardrail {
+export class RequiredScriptsRule extends Guardrail<RequiredScriptsRuleConfig> {
   public readonly name = "required-scripts";
 
   protected async check() {
+    const { requiredScripts } = this.getConfig();
     const packageJsonPath = this.resolvePackagePath("package.json");
     const reporter = this.createReporter(packageJsonPath);
 
@@ -22,7 +24,6 @@ export class RequiredScriptsRule extends Guardrail {
 
     const packageJson = JSON.parse(this.readPackageFile("package.json")) as PackageJsonShape;
     const scripts = packageJson.scripts ?? {};
-    const requiredScripts = this.getRequiredScripts();
     const missingScripts = requiredScripts.filter((scriptName) => !this.hasScript(scripts, scriptName));
 
     if (missingScripts.length > 0) {
@@ -34,8 +35,24 @@ export class RequiredScriptsRule extends Guardrail {
     }
   }
 
-  private getRequiredScripts() {
-    return this.options.requiredScripts as string[];
+  private getConfig(): RequiredScriptsRuleConfig {
+    const { requiredScripts } = this.options;
+
+    if (!Array.isArray(requiredScripts) || requiredScripts.length === 0) {
+      throw new InvalidGuardrailConfigError(
+        "additional.@rule/required-scripts.requiredScripts must be a non-empty array of strings.",
+      );
+    }
+
+    for (const scriptName of requiredScripts) {
+      if (typeof scriptName !== "string" || scriptName.trim().length === 0) {
+        throw new InvalidGuardrailConfigError(
+          "additional.@rule/required-scripts.requiredScripts must be a non-empty array of strings.",
+        );
+      }
+    }
+
+    return { requiredScripts };
   }
 
   private hasScript(scripts: Record<string, unknown>, scriptName: string) {

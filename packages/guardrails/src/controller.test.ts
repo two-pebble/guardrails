@@ -36,6 +36,14 @@ describe("Controller", () => {
     expect(message).toContain(expected);
   });
 
+  test("unhappy: rejects nested rule options objects in config", async () => {
+    const error = await withPackageFixture("invalid-nested-options-package", async () => {}, getNestedOptionsError);
+    const message = error?.message;
+    const expected = "additional.@rule/no-dynamic-imports.options is not supported";
+
+    expect(message).toContain(expected);
+  });
+
   test("unhappy: reports missing required package scripts", async () => {
     const result = await withPackageFixture(
       "missing-scripts-package",
@@ -102,6 +110,16 @@ const getInvalidRulePathsError = async (packageDir: string) => {
     additional: {
       "@rule/no-dynamic-imports": {
         paths: ["src/**/*.ts"],
+      },
+    },
+  });
+};
+
+const getNestedOptionsError = async (packageDir: string) => {
+  return getRunError(packageDir, {
+    additional: {
+      "@rule/no-dynamic-imports": {
+        options: {},
       },
     },
   });

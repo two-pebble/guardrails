@@ -10,10 +10,12 @@ export interface Diagnostic extends DiagnosticError {
   snippet?: string;
 }
 
-export interface GuardrailContext {
+export type RuleOptions = Record<string, unknown>;
+
+export interface GuardrailContext<TOptions = RuleOptions> {
   packageDir: string;
   exclude: string[];
-  options?: Record<string, unknown>;
+  options?: TOptions;
   paths?: string[];
 }
 
@@ -31,10 +33,7 @@ export interface GuardrailConfig {
   exclude?: ExcludeEntry[];
 }
 
-export interface RuleConfig {
-  options?: Record<string, unknown>;
-  [key: string]: unknown;
-}
+export type RuleConfig<TOptions = RuleOptions> = TOptions;
 
 export interface GroupRuleEntry {
   rule: string;
